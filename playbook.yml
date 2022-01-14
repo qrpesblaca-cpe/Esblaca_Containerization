@@ -1,0 +1,59 @@
+---
+  - name: Install and Build Dockerfile
+    hosts: all
+    
+    tasks:
+    - name: Include Variables from the config.yaml File
+      include_vars:
+        file: config.yaml
+
+    - name: Install Docker Dependencies for Ubuntu
+      include_role:
+        name: ubuntu_package
+      vars:
+        url: ""
+        repo: ""
+        filename: ""
+        package:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - gnupg-agent
+          - software-properties-common
+          - python3
+          - python3-pip
+        service: ""
+      when: ansible_facts['distribution'] == 'Ubuntu' 
+
+    - name: Install Docker for Ubuntu
+      include_role:
+        name: ubuntu_package
+      vars:
+        url: "https://download.docker.com/linux/ubuntu/gpg"
+        repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable"
+        filename: "docker-ce"
+        package:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io 
+        service: docker
+      when: ansible_distribution == "Ubuntu"
+    
+    - name: Stopping Firewall in Ubuntu
+      include_role:
+        name: ubuntu_firewall
+      when: ansible_distribution == "Ubuntu"  
+
+    - name: Pip Install Docker
+      include_role:
+        name: pip_installer
+      vars:
+        pippackage: docker
+    
+    - name: Add User to Docker Group
+      include_role:
+        name: docker
+
+    - name: Build and run LAMP stack using lampstackdocker role
+      include_role:
+        name: docker_lamp
